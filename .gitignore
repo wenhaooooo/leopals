@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.env/
+.env.local
+.env.*.local
+.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# Docker
+docker-compose.override.yml
+
+# Streamlit
+.streamlit/
+
+# Jupyter notebooks
+*.ipynb
+
+# Cache
+.cache/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+
+.env
