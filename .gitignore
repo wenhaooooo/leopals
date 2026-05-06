@@ -10,7 +10,7 @@ venv/
 .env/
 .env.local
 .env.*.local
-.env.example
+.env
 
 # IDE
 .vscode/
@@ -52,5 +52,3 @@ build/
 *.pem
 *.key
 *.crt
-
-.env

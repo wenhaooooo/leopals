@@ -11,15 +11,15 @@ LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校
 
 ## 🛠️ 技术栈
 
-| 分类 | 技术 |
-|------|------|
-| Web 框架 | FastAPI + Pydantic v2 |
-| AI 编排 | LangChain + LangGraph |
+| 分类      | 技术                            |
+| ------- | ----------------------------- |
+| Web 框架  | FastAPI + Pydantic v2         |
+| AI 编排   | LangChain + LangGraph         |
 | 大模型 API | DeepSeek / GPT-4o (OpenAI 兼容) |
-| 向量数据库 | PostgreSQL + pgvector |
-| 嵌入模型 | nomic-embed-text (Ollama) |
-| 状态存储 | Redis |
-| 前端 | Streamlit |
+| 向量数据库   | PostgreSQL + pgvector         |
+| 嵌入模型    | nomic-embed-text (Ollama)     |
+| 状态存储    | Redis                         |
+| 前端      | Streamlit                     |
 
 ## 📁 项目结构
 
@@ -82,9 +82,9 @@ streamlit run app_frontend.py
 
 ### 3. 访问服务
 
-- **API 文档**：http://localhost:8000/docs
-- **前端界面**：http://localhost:8501
-- **健康检查**：http://localhost:8000/health
+- **API 文档**：<http://localhost:8000/docs>
+- **前端界面**：<http://localhost:8501>
+- **健康检查**：<http://localhost:8000/health>
 
 ## 🔧 API 接口
 
@@ -111,17 +111,10 @@ curl -N -X POST http://localhost:8000/chat/stream \
 
 主要环境变量：
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| OPENAI_API_KEY | DeepSeek API Key | - |
-| OPENAI_API_BASE | API 基础地址 | https://api.deepseek.com/v1 |
-| POSTGRES_HOST | 数据库地址 | localhost |
-| OLLAMA_HOST | Ollama 地址 | http://localhost:11434 |
+| 变量                | 说明               | 默认值                           |
+| ----------------- | ---------------- | ----------------------------- |
+| OPENAI\_API\_KEY  | DeepSeek API Key | -                             |
+| OPENAI\_API\_BASE | API 基础地址         | <https://api.deepseek.com/v1> |
+| POSTGRES\_HOST    | 数据库地址            | localhost                     |
+| OLLAMA\_HOST      | Ollama 地址        | <http://localhost:11434>      |
 
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-## 📄 许可证
-
-MIT License
