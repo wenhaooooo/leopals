@@ -7,7 +7,10 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.database import init_db
-from app.api.routes import router as chat_router
+from app.api.routes import router as chat_router, kb_router
+from app.api.multimodal_routes import router as multimodal_router
+from app.api.schedule_routes import router as schedule_router
+from app.api.treehole_routes import router as treehole_router
 
 
 @asynccontextmanager
@@ -34,6 +37,10 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+app.include_router(kb_router)
+app.include_router(multimodal_router)
+app.include_router(schedule_router)
+app.include_router(treehole_router)
 
 
 @app.get("/", tags=["Health Check"])

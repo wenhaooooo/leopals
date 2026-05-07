@@ -2,6 +2,7 @@ import asyncio
 import json
 import httpx
 import streamlit as st
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings, VideoTransformerBase
 
 st.set_page_config(
     page_title="花小狮 - 校园智慧助手",
@@ -40,6 +41,12 @@ CUSTOM_CSS = """
     margin-bottom: 8px;
     border-left: 4px solid #667eea;
 }
+
+.image-preview {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
 </style>
 """
 
@@ -49,6 +56,10 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 def init_session_state():
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    if "last_speech_text" not in st.session_state:
+        st.session_state.last_speech_text = ""
+    if "uploaded_image" not in st.session_state:
+        st.session_state.uploaded_image = None
 
 
 def get_ai_response_sync(prompt: str, user_info: dict = None):
@@ -86,6 +97,21 @@ def get_ai_response_sync(prompt: str, user_info: dict = None):
         yield ("error", {"message": f"请求失败: {str(e)}"})
 
 
+def upload_image_to_ocr(file):
+    try:
+        with httpx.Client(timeout=60) as client:
+            response = client.post(
+                "http://localhost:8000/multimodal/image/ocr",
+                files={"file": (file.name, file.getvalue(), file.type)}
+            )
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {"error": response.json().get("detail", "上传失败")}
+    except Exception as e:
+        return {"error": f"上传失败: {str(e)}"}
+
+
 def main():
     init_session_state()
 
@@ -99,7 +125,8 @@ def main():
             - 📅 查询课表和校历
             - 📊 查看成绩和绩点
             - 📚 了解考研政策
-            - 💬 闲聊解闷
+            - 🖼️ 识别图片内容
+            - 🔊 语音对话
         """)
 
         if st.button("🧹 清除对话", type="secondary"):
@@ -134,7 +161,82 @@ def main():
                 st.markdown(f'<div class="assistant-bubble">{message["content"]}</div>', unsafe_allow_html=True)
 
     thought_placeholder = st.empty()
-    user_input = st.chat_input("有什么可以帮你？")
+    
+    col_input, col_image, col_mic = st.columns([4, 1, 1])
+    with col_input:
+        user_input = st.chat_input("有什么可以帮你？")
+    with col_image:
+        uploaded_file = st.file_uploader(
+            "",
+            type=["jpg", "jpeg", "png", "bmp"],
+            label_visibility="collapsed",
+            accept_multiple_files=False
+        )
+    with col_mic:
+        st.markdown("""
+        <button id="record-btn" style="width:100%;padding:8px;border-radius:8px;background:#667eea;color:white;border:none;cursor:pointer;">
+            🎤 语音输入
+        </button>
+        <script>
+        const btn = document.getElementById('record-btn');
+        btn.addEventListener('click', () => {
+            alert('语音功能开发中...');
+        });
+        </script>
+        """, unsafe_allow_html=True)
+
+    if uploaded_file is not None:
+        st.session_state.uploaded_image = uploaded_file
+        ocr_result = upload_image_to_ocr(uploaded_file)
+        
+        if "error" in ocr_result:
+            st.error(ocr_result["error"])
+        else:
+            ocr_text = ocr_result.get("text", "")
+            st.session_state.messages.append({"role": "user", "content": f"📷 图片识别结果：\n{ocr_text}"})
+            with chat_container:
+                st.markdown(f'<div class="user-bubble">📷 图片识别结果：\n{ocr_text}</div>', unsafe_allow_html=True)
+            
+            with st.spinner("花小狮正在分析图片内容..."):
+                ai_response = ""
+                response_placeholder = st.empty()
+
+                for event_type, data in get_ai_response_sync(ocr_text):
+                    if event_type == "error":
+                        thought_placeholder.markdown(
+                            f'<div class="thought-box">❌ {data.get("message")}</div>',
+                            unsafe_allow_html=True
+                        )
+                        break
+
+                    elif event_type == "thought":
+                        thought_placeholder.markdown(
+                            f'<div class="thought-box">🤔 {data.get("message", "")}</div>',
+                            unsafe_allow_html=True
+                        )
+
+                    elif event_type in ["on_retriever_start", "on_tool_start"]:
+                        thought_placeholder.markdown(
+                            f'<div class="thought-box">📚 {data.get("message", "")}</div>',
+                            unsafe_allow_html=True
+                        )
+
+                    elif event_type in ["on_retriever_end", "on_tool_end"]:
+                        thought_placeholder.markdown(
+                            f'<div class="thought-box">✅ {data.get("message", "")}</div>',
+                            unsafe_allow_html=True
+                        )
+
+                    elif event_type == "on_chat_model_stream":
+                        ai_response += data.get("content", "")
+                        response_placeholder.markdown(
+                            f'<div class="assistant-bubble">{ai_response}</div>',
+                            unsafe_allow_html=True
+                        )
+
+                thought_placeholder.empty()
+                if ai_response:
+                    st.session_state.messages.append({"role": "assistant", "content": ai_response})
 
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
@@ -161,7 +263,7 @@ def main():
 
                 elif event_type in ["on_retriever_start", "on_tool_start"]:
                     thought_placeholder.markdown(
-                        f'<div class="thought-box">� {data.get("message", "")}</div>',
+                        f'<div class="thought-box">📚 {data.get("message", "")}</div>',
                         unsafe_allow_html=True
                     )
 

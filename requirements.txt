@@ -39,6 +39,14 @@ tenacity>=8.2.0
 
 # Frontend
 streamlit>=1.32.0
+streamlit-webrtc>=0.45.0
+
+# Multimodal Support
+pytesseract>=0.3.10
+Pillow>=10.0.0
+numpy>=1.26.0
+pydub>=0.25.1
+edge-tts>=6.0.0
 
 # Development Tools
 pytest>=8.1.0

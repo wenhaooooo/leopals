@@ -64,3 +64,30 @@ async def init_db():
             CREATE INDEX IF NOT EXISTS ix_document_chunks_source
             ON document_chunks (source_file)
         """))
+
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS document_sources (
+                id SERIAL PRIMARY KEY,
+                file_name VARCHAR NOT NULL,
+                file_path VARCHAR NOT NULL,
+                file_type VARCHAR NOT NULL,
+                file_size INTEGER NOT NULL,
+                category VARCHAR NOT NULL,
+                chunk_count INTEGER DEFAULT 0,
+                upload_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                description TEXT,
+                status VARCHAR DEFAULT 'processed'
+            )
+        """))
+
+        await conn.execute(text("""
+            CREATE INDEX IF NOT EXISTS ix_document_sources_file_name
+            ON document_sources (file_name)
+        """))
+
+        await conn.execute(text("""
+            CREATE INDEX IF NOT EXISTS ix_document_sources_category
+            ON document_sources (category)
+        """))
+
+        

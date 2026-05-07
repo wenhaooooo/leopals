@@ -1,13 +1,34 @@
-# 🦁 LeoPals - 校园智慧助手
+# 🦁 LeoPals - 花小狮校园智慧助手
 
 LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校园非结构化数据与校务系统 API，通过 RAG 和 Agent 技术提供低延迟、防幻觉的问答与办事服务。
 
 ## ✨ 核心特性
 
+### 🤖 智能问答
 - **RAG 混合检索**：结合向量检索与 BM25 全文检索，使用 RRF 算法融合结果
 - **LangGraph 状态机**：基于状态机的多步决策 Agent，支持工具调用和知识检索
 - **SSE 流式输出**：实时流式响应，区分思考过程与最终回答
-- **Mock 业务工具**：提供课表查询、成绩查询等模拟工具
+
+### 📅 智能日程管理
+- 课程表同步（从教务系统自动拉取）
+- 智能提醒（作业截止、考试安排）
+- 冲突检测（课表与活动冲突）
+
+### 🖼️ 多模态支持
+- 图片上传识别（课程表图片 → 结构化数据）
+- 手绘示意图识别（校园地图导航）
+- 语音输入输出（STT + TTS）
+
+### 🗺️ 校园地图导航
+- 3D 校园地图可视化
+- 教室查找导航（考虑教学楼层、电梯位置）
+- 校园设施推荐（最近的食堂、图书馆等）
+- 全景地图支持（720云全景）
+
+### 🌳 AI树洞
+- 匿名倾诉心事，AI智能回复安慰
+- 自动匹配相似经历的同学互相鼓励
+- 完全匿名，隐私保护
 
 ## 🛠️ 技术栈
 
@@ -31,18 +52,34 @@ app/
 │   ├── config.py           # 环境变量配置
 │   └── database.py         # 数据库连接
 ├── api/                    # 路由层
-│   └── routes.py           # 聊天接口
-├── models/                 # Pydantic Schemas
-│   └── document.py         # 文档模型
+│   ├── routes.py           # 聊天接口
+│   ├── multimodal_routes.py # 多模态接口
+│   ├── schedule_routes.py  # 日程管理接口
+│   ├── map_routes.py       # 地图导航接口
+│   └── treehole_routes.py  # 树洞接口
+├── models/                 # SQLAlchemy Models
+│   ├── document.py         # 文档模型
+│   ├── schedule.py         # 日程模型
+│   ├── map.py              # 地图模型
+│   └── treehole.py         # 树洞模型
 ├── services/
 │   ├── rag/                # RAG 检索模块
 │   │   ├── document_loader.py
 │   │   └── pgvector_retriever.py
-│   └── agent/              # LangGraph Agent
-│       ├── state.py        # 状态定义
-│       ├── tools.py        # 工具集
-│       └── graph.py        # 状态机
-└── app_frontend.py         # Streamlit 前端
+│   ├── agent/              # LangGraph Agent
+│   │   ├── state.py        # 状态定义
+│   │   ├── tools.py        # 工具集
+│   │   └── graph.py        # 状态机
+│   ├── multimodal/         # 多模态服务
+│   │   ├── image_service.py
+│   │   └── audio_service.py
+│   ├── schedule/           # 日程服务
+│   │   └── schedule_service.py
+│   ├── map/                # 地图服务
+│   │   └── map_service.py
+│   └── treehole/           # 树洞服务
+│       └── treehole_service.py
+└── app_frontend.py         # Streamlit 主前端
 ```
 
 ## 🚀 快速开始
@@ -75,16 +112,42 @@ pip install -r requirements.txt
 
 # 启动后端
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
-# 启动前端（新开终端）
-streamlit run app_frontend.py
 ```
 
-### 3. 访问服务
+### 3. 启动前端模块
 
-- **API 文档**：<http://localhost:8000/docs>
-- **前端界面**：<http://localhost:8501>
-- **健康检查**：<http://localhost:8000/health>
+```bash
+# 主应用（问答）
+streamlit run app_frontend.py       # http://localhost:8501
+
+# 知识库管理后台
+streamlit run admin_frontend.py     # http://localhost:8502
+
+# 日程管理
+streamlit run schedule_frontend.py  # http://localhost:8503
+
+# 地图导航
+streamlit run map_frontend.py       # http://localhost:8504
+
+# 全景地图
+streamlit run panorama_frontend.py  # http://localhost:8505
+
+# AI树洞
+streamlit run treehole_frontend.py  # http://localhost:8506
+```
+
+### 4. 访问服务
+
+| 服务 | 地址 |
+|------|------|
+| API 文档 | <http://localhost:8000/docs> |
+| 主应用 | <http://localhost:8501> |
+| 知识库管理 | <http://localhost:8502> |
+| 日程管理 | <http://localhost:8503> |
+| 地图导航 | <http://localhost:8504> |
+| 全景地图 | <http://localhost:8505> |
+| AI树洞 | <http://localhost:8506> |
+| 健康检查 | <http://localhost:8000/health> |
 
 ## 🔧 API 接口
 
@@ -100,12 +163,58 @@ curl -N -X POST http://localhost:8000/chat/stream \
   }'
 ```
 
+### 日程管理
+
+```bash
+# 同步课程表
+curl -X POST http://localhost:8000/schedule/courses/sync \
+  -H "Content-Type: application/json" \
+  -d '{
+    "student_id": "20240001",
+    "courses": [...]
+  }'
+
+# 获取今日日程
+curl http://localhost:8000/schedule/today?student_id=20240001
+```
+
+### 地图导航
+
+```bash
+# 获取建筑列表
+curl http://localhost:8000/map/buildings
+
+# 路径规划
+curl -X POST http://localhost:8000/map/path \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_id": 1,
+    "end_id": 3
+  }'
+```
+
+### AI树洞
+
+```bash
+# 发布帖子
+curl -X POST http://localhost:8000/treehole/post \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "今天心情不太好..."
+  }'
+
+# 获取帖子列表
+curl http://localhost:8000/treehole/posts
+```
+
 ## 📝 预设问题示例
 
 - 📅 "校历哪里看？"
 - 📊 "帮我查一下上学期绩点"
 - 📚 "考研加分政策是什么？"
 - 💬 "你好呀！"
+- 🗺️ "图书馆在哪里？"
+- 🌳 "我最近压力很大..."
 
 ## 📋 配置说明
 
@@ -113,8 +222,31 @@ curl -N -X POST http://localhost:8000/chat/stream \
 
 | 变量                | 说明               | 默认值                           |
 | ----------------- | ---------------- | ----------------------------- |
-| OPENAI\_API\_KEY  | DeepSeek API Key | -                             |
-| OPENAI\_API\_BASE | API 基础地址         | <https://api.deepseek.com/v1> |
-| POSTGRES\_HOST    | 数据库地址            | localhost                     |
-| OLLAMA\_HOST      | Ollama 地址        | <http://localhost:11434>      |
+| OPENAI_API_KEY    | DeepSeek API Key | -                             |
+| OPENAI_API_BASE   | API 基础地址         | https://api.deepseek.com/v1   |
+| POSTGRES_HOST     | 数据库地址            | localhost                     |
+| POSTGRES_PORT     | 数据库端口            | 5432                          |
+| POSTGRES_DB       | 数据库名称            | leopals                       |
+| POSTGRES_USER     | 数据库用户名          | admin                         |
+| POSTGRES_PASSWORD | 数据库密码            | password                      |
+| OLLAMA_HOST       | Ollama 地址        | http://localhost:11434        |
+| REDIS_HOST        | Redis 地址         | localhost                     |
 
+## 📦 功能模块列表
+
+| 模块 | 文件 | 说明 |
+|------|------|------|
+| 主应用 | `app_frontend.py` | 智能问答对话界面 |
+| 知识库管理 | `admin_frontend.py` | 文档上传与管理 |
+| 日程管理 | `schedule_frontend.py` | 课程表、提醒、冲突检测 |
+| 地图导航 | `map_frontend.py` | 2D地图、路径规划 |
+| 全景地图 | `panorama_frontend.py` | 3D全景校园 |
+| AI树洞 | `treehole_frontend.py` | 匿名倾诉、AI安慰 |
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
+
+MIT License

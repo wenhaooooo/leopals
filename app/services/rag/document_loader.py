@@ -4,8 +4,6 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 import fitz
-from unstructured.partition.md import partition_md
-from unstructured.chunking.title import chunk_by_title
 
 from langchain_core.documents import Document
 
@@ -66,19 +64,17 @@ class CampusDocumentLoader:
         except Exception as e:
             raise RuntimeError(f"Failed to load PDF file {file_path}: {str(e)}")
 
-    def _load_markdown_with_unstructured(self, file_path: str) -> List[Document]:
+    def _load_markdown_simple(self, file_path: str) -> List[Document]:
         try:
-            elements = partition_md(file_path)
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
             base_metadata = self._extract_metadata_from_path(file_path)
             
             docs = []
-            for element in elements:
-                if hasattr(element, 'text') and element.text.strip():
-                    metadata = base_metadata.copy()
-                    metadata["page"] = 1
-                    if hasattr(element, 'category'):
-                        metadata["element_type"] = element.category
-                    docs.append(Document(page_content=element.text, metadata=metadata))
+            metadata = base_metadata.copy()
+            metadata["page"] = 1
+            docs.append(Document(page_content=content, metadata=metadata))
             
             return docs
         except Exception as e:
@@ -133,7 +129,7 @@ class CampusDocumentLoader:
         if suffix == ".pdf":
             return self._load_pdf_with_pymupdf(file_path)
         elif suffix in (".md", ".markdown"):
-            return self._load_markdown_with_unstructured(file_path)
+            return self._load_markdown_simple(file_path)
         else:
             raise ValueError(f"Unsupported file type: {suffix}")
 

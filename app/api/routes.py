@@ -1,15 +1,20 @@
 import json
-from typing import Dict, Any
+import os
+import shutil
+from pathlib import Path
+from typing import Dict, Any, Optional, List
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage, AIMessage
 
 from app.services.agent.graph import graph
 from app.services.agent.state import AgentState
+from app.services.rag.pgvector_retriever import pgvector_retriever
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
+kb_router = APIRouter(prefix="/knowledge", tags=["Knowledge Base"])
 
 
 class ChatRequest(BaseModel):
@@ -78,3 +83,76 @@ async def chat_stream(request: ChatRequest):
         chat_stream_generator(request),
         media_type="text/event-stream"
     )
+
+
+@kb_router.post("/upload", summary="上传文档到知识库")
+async def upload_document(
+    file: UploadFile = File(...),
+    description: Optional[str] = Form(None),
+    category: Optional[str] = Form(None)
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="文件名不能为空")
+
+    allowed_types = [".pdf", ".md", ".markdown"]
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in allowed_types:
+        raise HTTPException(status_code=400, detail=f"仅支持文件类型: {', '.join(allowed_types)}")
+
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+    
+    file_path = upload_dir / file.filename
+    
+    counter = 1
+    while file_path.exists():
+        stem = Path(file.filename).stem
+        suffix = Path(file.filename).suffix
+        file_path = upload_dir / f"{stem}_{counter}{suffix}"
+        counter += 1
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    try:
+        doc_source_id = await pgvector_retriever.add_documents(str(file_path), description)
+        return JSONResponse(
+            status_code=201,
+            content={
+                "message": "文档上传成功",
+                "document_id": doc_source_id,
+                "file_name": file.filename
+            }
+        )
+    except Exception as e:
+        if file_path.exists():
+            os.remove(file_path)
+        raise HTTPException(status_code=500, detail=f"文档处理失败: {str(e)}")
+
+
+@kb_router.get("/documents", summary="获取文档列表")
+async def list_documents(skip: int = 0, limit: int = 100):
+    sources = await pgvector_retriever.list_document_sources(skip, limit)
+    return {"documents": sources}
+
+
+@kb_router.get("/documents/{source_id}", summary="获取文档详情")
+async def get_document(source_id: int):
+    source = await pgvector_retriever.get_document_source(source_id)
+    if not source:
+        raise HTTPException(status_code=404, detail="文档不存在")
+    return source
+
+
+@kb_router.delete("/documents/{source_id}", summary="删除文档")
+async def delete_document(source_id: int):
+    success = await pgvector_retriever.delete_document_source(source_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="文档不存在")
+    return {"message": "文档删除成功"}
+
+
+@kb_router.get("/stats", summary="知识库统计")
+async def get_knowledge_stats():
+    stats = await pgvector_retriever.get_knowledge_stats()
+    return stats
