@@ -16,14 +16,7 @@ LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校
 
 ### 🖼️ 多模态支持
 - 图片上传识别（课程表图片 → 结构化数据）
-- 手绘示意图识别（校园地图导航）
 - 语音输入输出（STT + TTS）
-
-### 🗺️ 校园地图导航
-- 3D 校园地图可视化
-- 教室查找导航（考虑教学楼层、电梯位置）
-- 校园设施推荐（最近的食堂、图书馆等）
-- 全景地图支持（720云全景）
 
 ### 🌳 AI树洞
 - 匿名倾诉心事，AI智能回复安慰
@@ -55,12 +48,10 @@ app/
 │   ├── routes.py           # 聊天接口
 │   ├── multimodal_routes.py # 多模态接口
 │   ├── schedule_routes.py  # 日程管理接口
-│   ├── map_routes.py       # 地图导航接口
 │   └── treehole_routes.py  # 树洞接口
 ├── models/                 # SQLAlchemy Models
 │   ├── document.py         # 文档模型
 │   ├── schedule.py         # 日程模型
-│   ├── map.py              # 地图模型
 │   └── treehole.py         # 树洞模型
 ├── services/
 │   ├── rag/                # RAG 检索模块
@@ -75,8 +66,6 @@ app/
 │   │   └── audio_service.py
 │   ├── schedule/           # 日程服务
 │   │   └── schedule_service.py
-│   ├── map/                # 地图服务
-│   │   └── map_service.py
 │   └── treehole/           # 树洞服务
 │       └── treehole_service.py
 └── app_frontend.py         # Streamlit 主前端
@@ -126,12 +115,6 @@ streamlit run admin_frontend.py     # http://localhost:8502
 # 日程管理
 streamlit run schedule_frontend.py  # http://localhost:8503
 
-# 地图导航
-streamlit run map_frontend.py       # http://localhost:8504
-
-# 全景地图
-streamlit run panorama_frontend.py  # http://localhost:8505
-
 # AI树洞
 streamlit run treehole_frontend.py  # http://localhost:8506
 ```
@@ -144,8 +127,6 @@ streamlit run treehole_frontend.py  # http://localhost:8506
 | 主应用 | <http://localhost:8501> |
 | 知识库管理 | <http://localhost:8502> |
 | 日程管理 | <http://localhost:8503> |
-| 地图导航 | <http://localhost:8504> |
-| 全景地图 | <http://localhost:8505> |
 | AI树洞 | <http://localhost:8506> |
 | 健康检查 | <http://localhost:8000/health> |
 
@@ -178,21 +159,6 @@ curl -X POST http://localhost:8000/schedule/courses/sync \
 curl http://localhost:8000/schedule/today?student_id=20240001
 ```
 
-### 地图导航
-
-```bash
-# 获取建筑列表
-curl http://localhost:8000/map/buildings
-
-# 路径规划
-curl -X POST http://localhost:8000/map/path \
-  -H "Content-Type: application/json" \
-  -d '{
-    "start_id": 1,
-    "end_id": 3
-  }'
-```
-
 ### AI树洞
 
 ```bash
@@ -213,7 +179,6 @@ curl http://localhost:8000/treehole/posts
 - 📊 "帮我查一下上学期绩点"
 - 📚 "考研加分政策是什么？"
 - 💬 "你好呀！"
-- 🗺️ "图书馆在哪里？"
 - 🌳 "我最近压力很大..."
 
 ## 📋 配置说明
@@ -239,8 +204,6 @@ curl http://localhost:8000/treehole/posts
 | 主应用 | `app_frontend.py` | 智能问答对话界面 |
 | 知识库管理 | `admin_frontend.py` | 文档上传与管理 |
 | 日程管理 | `schedule_frontend.py` | 课程表、提醒、冲突检测 |
-| 地图导航 | `map_frontend.py` | 2D地图、路径规划 |
-| 全景地图 | `panorama_frontend.py` | 3D全景校园 |
 | AI树洞 | `treehole_frontend.py` | 匿名倾诉、AI安慰 |
 
 ## 🤝 贡献指南
