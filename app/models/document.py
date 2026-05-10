@@ -33,6 +33,7 @@ class DocumentChunk(Base):
     source_file = Column(String, nullable=True)
     category = Column(String, nullable=True)
     document_source_id = Column(Integer, nullable=True, index=True)
+    version = Column(Integer, default=1)
 
     __table_args__ = (
         Index(
@@ -42,6 +43,18 @@ class DocumentChunk(Base):
             postgresql_ops={"embedding": "vector_cosine_ops"}
         ),
     )
+
+
+class DocumentVersion(Base):
+    __tablename__ = "document_versions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_source_id = Column(Integer, nullable=True, index=True)
+    version_number = Column(Integer, default=1)
+    content_hash = Column(String(64))
+    file_size = Column(Integer)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    notes = Column(Text, nullable=True)
 
 
 class CourseSchedule(Base):

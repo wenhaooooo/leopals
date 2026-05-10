@@ -6,6 +6,10 @@ LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校
 
 ### 🤖 智能问答
 - **RAG 混合检索**：结合向量检索与 BM25 全文检索，使用 RRF 算法融合结果
+- **语义缓存层**：减少重复查询响应时间，缓存有效期5分钟，最大缓存100条
+- **Query Rewriting**：将模糊口语化查询转换为更精确的检索关键词
+- **Contextual Compression**：根据用户查询过滤和压缩检索文档，去除冗余信息
+- **文档版本控制**：支持文档更新和回溯，追踪历史版本
 - **LangGraph 状态机**：基于状态机的多步决策 Agent，支持工具调用和知识检索
 - **SSE 流式输出**：实时流式响应，区分思考过程与最终回答
 
@@ -50,7 +54,7 @@ app/
 │   ├── schedule_routes.py  # 日程管理接口
 │   └── treehole_routes.py  # 树洞接口
 ├── models/                 # SQLAlchemy Models
-│   ├── document.py         # 文档模型
+│   ├── document.py         # 文档模型（含版本控制）
 │   ├── schedule.py         # 日程模型
 │   └── treehole.py         # 树洞模型
 ├── services/
