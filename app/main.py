@@ -16,6 +16,9 @@ from app.api.treehole_routes import router as treehole_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    # 初始化多智能体系统
+    from app.services.agent.multi_agent import init_multi_agent
+    init_multi_agent()
     yield
 
 
