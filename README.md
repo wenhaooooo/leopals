@@ -1,6 +1,6 @@
 # 🦁 LeoPals - 花小狮校园智慧助手
 
-LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校园非结构化数据与校务系统 API，通过 RAG 和 Agent 技术提供低延迟、防幻觉的问答与办事服务。
+LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校园非结构化数据与校务系统 API，通过 **RAG** 和 **多智能体协作架构** 提供低延迟、防幻觉的问答与办事服务。
 
 ## ✨ 核心特性
 
@@ -12,6 +12,20 @@ LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校
 - **文档版本控制**：支持文档更新和回溯，追踪历史版本
 - **LangGraph 状态机**：基于状态机的多步决策 Agent，支持工具调用和知识检索
 - **SSE 流式输出**：实时流式响应，区分思考过程与最终回答
+
+### 🧠 多智能体协作架构
+```
+用户请求 → Orchestrator → [QAAgent/ScheduleAgent/EmotionalAgent/KnowledgeAgent/AssistantAgent] → 结果汇总
+```
+
+| 智能体 | 职责 | 核心能力 |
+|--------|------|---------|
+| **Orchestrator** | 意图识别、任务分发 | 意图分类、智能体选择、多智能体协作 |
+| **QAAgent** | 事实性问答 | RAG检索、精准回答 |
+| **ScheduleAgent** | 课表查询、日程管理 | 课表API、日历集成、提醒设置 |
+| **EmotionalAgent** | 情感陪伴、心理支持 | 情感分析、共情回应 |
+| **KnowledgeAgent** | 深度文档理解 | 政策解读、多模态分析 |
+| **AssistantAgent** | 复杂任务规划 | 任务分解、步骤执行、智能体协调 |
 
 ### 📅 智能日程管理
 - 课程表同步（从教务系统自动拉取）
@@ -44,7 +58,7 @@ LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校
 ```
 app/
 ├── __init__.py
-├── main.py                 # FastAPI 入口
+├── main.py                 # FastAPI 入口（含多智能体初始化）
 ├── core/                   # 核心配置
 │   ├── config.py           # 环境变量配置
 │   └── database.py         # 数据库连接
@@ -61,10 +75,19 @@ app/
 │   ├── rag/                # RAG 检索模块
 │   │   ├── document_loader.py
 │   │   └── pgvector_retriever.py
-│   ├── agent/              # LangGraph Agent
+│   ├── agent/              # Agent 模块
 │   │   ├── state.py        # 状态定义
 │   │   ├── tools.py        # 工具集
-│   │   └── graph.py        # 状态机
+│   │   ├── graph.py        # 状态机
+│   │   └── multi_agent/    # 多智能体体系
+│   │       ├── __init__.py
+│   │       ├── message_bus.py     # 消息总线
+│   │       ├── orchestrator.py    # 调度智能体
+│   │       ├── qa_agent.py        # 问答智能体
+│   │       ├── schedule_agent.py  # 日程智能体
+│   │       ├── emotional_agent.py # 情感智能体
+│   │       ├── knowledge_agent.py # 知识智能体
+│   │       └── assistant_agent.py # 助手智能体
 │   ├── multimodal/         # 多模态服务
 │   │   ├── image_service.py
 │   │   └── audio_service.py
@@ -103,7 +126,7 @@ docker exec -it leopals-ollama ollama pull nomic-embed-text
 # 安装依赖
 pip install -r requirements.txt
 
-# 启动后端
+# 启动后端（自动初始化多智能体系统）
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -184,6 +207,7 @@ curl http://localhost:8000/treehole/posts
 - 📚 "考研加分政策是什么？"
 - 💬 "你好呀！"
 - 🌳 "我最近压力很大..."
+- 🤝 "帮我安排明天的学习计划"
 
 ## 📋 配置说明
 
@@ -209,6 +233,18 @@ curl http://localhost:8000/treehole/posts
 | 知识库管理 | `admin_frontend.py` | 文档上传与管理 |
 | 日程管理 | `schedule_frontend.py` | 课程表、提醒、冲突检测 |
 | AI树洞 | `treehole_frontend.py` | 匿名倾诉、AI安慰 |
+
+## 📚 文档目录
+
+```
+docs/
+├── schema.sql              # 数据库建表脚本
+├── PROJECT_HIGHLIGHTS.md   # 项目亮点文档
+├── TECHNICAL_DESIGN.md     # 技术方案设计文档
+├── MULTI_AGENT_DESIGN.md   # 多智能体架构设计方案
+├── RESUME_CONTENT.md       # 简历话术文档
+└── INTERVIEW_TALK.md       # 面试话术文档
+```
 
 ## 🤝 贡献指南
 
