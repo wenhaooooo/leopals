@@ -1,6 +1,6 @@
 # 🦁 LeoPals - 花小狮校园智慧助手
 
-LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校园非结构化数据与校务系统 API，通过 **RAG** 和 **多智能体协作架构** 提供低延迟、防幻觉的问答与办事服务。
+LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校园非结构化数据与校务系统 API，通过 **RAG**、**多智能体协作架构** 和 **Function Calling** 提供低延迟、防幻觉的问答与办事服务。
 
 ## ✨ 核心特性
 
@@ -13,6 +13,13 @@ LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校
 - **LangGraph 状态机**：基于状态机的多步决策 Agent，支持工具调用和知识检索
 - **SSE 流式输出**：实时流式响应，区分思考过程与最终回答
 
+### 🔧 Function Calling 业务闭环
+- **课表查询**：获取指定周次的课程安排
+- **成绩查询**：查询学期成绩和 GPA
+- **空教室搜索**：查找可用的自习教室
+- **智能提醒**：设置学习、考试提醒
+- **冲突检测**：检测日程与课程冲突
+
 ### 🧠 多智能体协作架构
 ```
 用户请求 → Orchestrator → [QAAgent/ScheduleAgent/EmotionalAgent/KnowledgeAgent/AssistantAgent] → 结果汇总
@@ -22,7 +29,7 @@ LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校
 |--------|------|---------|
 | **Orchestrator** | 意图识别、任务分发 | 意图分类、智能体选择、多智能体协作 |
 | **QAAgent** | 事实性问答 | RAG检索、精准回答 |
-| **ScheduleAgent** | 课表查询、日程管理 | 课表API、日历集成、提醒设置 |
+| **ScheduleAgent** | 课表查询、日程管理 | Function Calling、课表API、提醒设置 |
 | **EmotionalAgent** | 情感陪伴、心理支持 | 情感分析、共情回应 |
 | **KnowledgeAgent** | 深度文档理解 | 政策解读、多模态分析 |
 | **AssistantAgent** | 复杂任务规划 | 任务分解、步骤执行、智能体协调 |
@@ -77,7 +84,9 @@ app/
 │   │   └── pgvector_retriever.py
 │   ├── agent/              # Agent 模块
 │   │   ├── state.py        # 状态定义
-│   │   ├── tools.py        # 工具集
+│   │   ├── tools/          # Function Calling 工具集
+│   │   │   ├── __init__.py
+│   │   │   └── function_tools.py
 │   │   ├── graph.py        # 状态机
 │   │   └── multi_agent/    # 多智能体体系
 │   │       ├── __init__.py
@@ -87,7 +96,8 @@ app/
 │   │       ├── schedule_agent.py  # 日程智能体
 │   │       ├── emotional_agent.py # 情感智能体
 │   │       ├── knowledge_agent.py # 知识智能体
-│   │       └── assistant_agent.py # 助手智能体
+│   │       ├── assistant_agent.py # 助手智能体
+│   │       └── function_calling_agent.py # Function Calling 智能体
 │   ├── multimodal/         # 多模态服务
 │   │   ├── image_service.py
 │   │   └── audio_service.py
@@ -208,6 +218,10 @@ curl http://localhost:8000/treehole/posts
 - 💬 "你好呀！"
 - 🌳 "我最近压力很大..."
 - 🤝 "帮我安排明天的学习计划"
+- 🏫 "明天上午有什么课？"
+- 📍 "哪里有空教室可以自习？"
+- ⏰ "提醒我明天早上9点复习高数"
+- ⚠️ "周五下午3点开会会和我的课冲突吗？"
 
 ## 📋 配置说明
 
@@ -242,8 +256,9 @@ docs/
 ├── PROJECT_HIGHLIGHTS.md   # 项目亮点文档
 ├── TECHNICAL_DESIGN.md     # 技术方案设计文档
 ├── MULTI_AGENT_DESIGN.md   # 多智能体架构设计方案
-├── RESUME_CONTENT.md       # 简历话术文档
-└── INTERVIEW_TALK.md       # 面试话术文档
+├── RESUME_CONTENT.md       # 简历话术文档（AI风控平台）
+├── INTERVIEW_TALK.md       # 面试话术文档（花小狮项目）
+└── resume.md               # 简历话术文档（完整版）
 ```
 
 ## 🤝 贡献指南
