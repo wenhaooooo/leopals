@@ -17,6 +17,8 @@ from langchain_core.utils.function_calling import convert_to_openai_function
 
 from app.core.config import settings
 from app.services.agent.tools.function_tools import get_business_tools
+from app.services.skills import init_skills, SkillRegistry
+from app.services.skills.langchain_adapter import convert_all_skills_to_tools
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +45,22 @@ class FunctionCallingAgent:
     - LLM 自主决定是否调用工具，不需要先用 if-else 判断
     - 参数提取由 LLM 完成，自动从用户输入中提取（如"第8周"提取为 week=8）
     - 工具调用结果自动注入上下文，不需要手动拼接
+    - 支持动态技能注册，新技能无需修改代码即可使用
     """
 
-    def __init__(self):
-        self.tools = get_business_tools()
+    def __init__(self, use_skill_system: bool = True):
+        self.use_skill_system = use_skill_system
+        self._tools_initialized = False
+        
+        if use_skill_system:
+            # 使用技能系统（延迟初始化）
+            self.tools = []
+            logger.info("Function Calling Agent 将使用技能系统（延迟初始化）")
+        else:
+            # 使用传统业务工具
+            self.tools = get_business_tools()
+            logger.info(f"Function Calling Agent 使用传统业务工具，加载了 {len(self.tools)} 个工具")
+        
         # 绑定工具到 LLM（启用 Function Calling）
         self.llm_with_tools = llm.bind_functions(
             functions=[convert_to_openai_function(tool) for tool in self.tools],
@@ -54,9 +68,58 @@ class FunctionCallingAgent:
         )
         self.system_prompt = self._build_system_prompt()
 
+    async def _ensure_tools_initialized(self):
+        """确保工具已初始化"""
+        if self.use_skill_system and not self._tools_initialized:
+            await init_skills()
+            self.tools = convert_all_skills_to_tools()
+            # 重新绑定工具到 LLM
+            self.llm_with_tools = llm.bind_functions(
+                functions=[convert_to_openai_function(tool) for tool in self.tools],
+                function_call="auto"
+            )
+            self._tools_initialized = True
+            logger.info(f"Function Calling Agent 技能系统初始化完成，加载了 {len(self.tools)} 个技能工具")
+
     def _build_system_prompt(self) -> str:
         """构建系统提示词"""
-        return """你是花小狮 (LeoPals)，一只活泼俏皮的小狮子助手！🐾
+        if self.use_skill_system:
+            return """你是花小狮 (LeoPals)，一只活泼俏皮的小狮子助手！🐾
+
+你的职责是帮助华中师范大学师生解决校园相关问题。
+
+【能力范围】
+- 查询课表和成绩
+- 设置学习提醒
+- 搜索空教室
+- 检测日程冲突
+- 回答校园知识问题
+
+【技能系统】
+你拥有一个动态技能系统，可以根据用户需求自动调用相应的技能：
+- schedule_query: 查询学生课表信息，支持按周次和星期筛选
+- grade_query: 查询学生成绩和GPA，支持按学期筛选
+- classroom_search: 搜索指定时间段的可用空教室
+- notification_set: 设置学习、考试等类型的提醒
+
+【工具调用原则】
+1. 当用户询问具体数据时（如"我明天有什么课"），优先使用技能工具获取实时数据
+2. 当用户询问知识性问题时（如"考研政策是什么"），使用 RAG 检索
+3. 当用户只是闲聊时，直接回答
+4. 技能工具会自动从用户输入中提取参数，无需手动解析
+
+【回答风格】
+- 活泼可爱，使用适当的表情符号
+- 回答简洁明了，避免冗长
+- 如果技能返回"未找到"或"无结果"，诚实告知用户
+
+【重要规则】
+- 严禁编造信息，不知道就说不知道
+- 技能调用是为了获取真实数据，不是为了炫耀技术
+- 动态技能系统支持热加载，新技能可以随时添加
+"""
+        else:
+            return """你是花小狮 (LeoPals)，一只活泼俏皮的小狮子助手！🐾
 
 你的职责是帮助华中师范大学师生解决校园相关问题。
 
@@ -94,6 +157,9 @@ class FunctionCallingAgent:
             {"result": "回答内容", "confidence": 置信度, "tool_calls": [{"name": "...", "args": {...}}]}
         """
         logger.info(f"Function Calling Agent 处理请求: {query}")
+
+        # 确保工具已初始化
+        await self._ensure_tools_initialized()
 
         tool_calls_made = []
         messages = [
@@ -182,5 +248,5 @@ class FunctionCallingAgent:
         return None
 
 
-# 全局实例
-function_calling_agent = FunctionCallingAgent()
+# 全局实例（默认使用技能系统）
+function_calling_agent = FunctionCallingAgent(use_skill_system=True)

@@ -22,7 +22,7 @@ LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校
 
 ### 🧠 多智能体协作架构
 ```
-用户请求 → Orchestrator → [QAAgent/ScheduleAgent/EmotionalAgent/KnowledgeAgent/AssistantAgent] → 结果汇总
+用户请求 → Orchestrator → [QAAgent/ScheduleAgent/EmotionalAgent/KnowledgeAgent/AssistantAgent/FunctionCallingAgent] → 结果汇总
 ```
 
 | 智能体 | 职责 | 核心能力 |
@@ -33,6 +33,39 @@ LeoPals 是一个面向高校师生的垂直领域智能服务平台，整合校
 | **EmotionalAgent** | 情感陪伴、心理支持 | 情感分析、共情回应 |
 | **KnowledgeAgent** | 深度文档理解 | 政策解读、多模态分析 |
 | **AssistantAgent** | 复杂任务规划 | 任务分解、步骤执行、智能体协调 |
+| **FunctionCallingAgent** | 业务系统闭环 | 动态技能系统、工具调用、参数提取自动化 |
+
+### 🛠️ 动态技能注册系统
+```
+Agent (智能体)
+    │
+    ├─→ Skill Registry (技能注册表)
+    │   ├─→ ScheduleSkill (课表技能)
+    │   ├─→ GradeSkill (成绩技能)
+    │   ├─→ ClassroomSkill (教室技能)
+    │   └─→ NotificationSkill (通知技能)
+    │
+    └─→ Skill Loader (动态加载)
+        ├─→ 本地技能 (.py 文件)
+        ├─→ 远程技能 (Git 仓库)
+        └─→ MCP Server
+```
+
+**核心特性**：
+- **插件化架构**：技能以插件形式管理，支持热加载
+- **类型安全**：基于 Pydantic 的参数校验
+- **异步执行**：支持高并发技能调用
+- **多源加载**：支持本地文件、Git 仓库、MCP Server
+- **生命周期管理**：支持技能的启用、禁用、注销
+- **上下文传递**：支持用户 ID、会话 ID 等上下文信息
+
+**已实现技能**：
+| 技能名称 | 功能 | 类别 |
+|---------|------|------|
+| `schedule_query` | 查询课表 | schedule |
+| `grade_query` | 查询成绩 | academic |
+| `classroom_search` | 搜索空教室 | facility |
+| `notification_set` | 设置提醒 | notification |
 
 ### 📅 智能日程管理
 - 课程表同步（从教务系统自动拉取）
