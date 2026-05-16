@@ -48,7 +48,7 @@ class IntentClassifier:
             - knowledge: 文档知识查询（如"奖学金政策是什么？"、"校历在哪里看？"）
             - assistant: 任务协助（如"帮我安排明天的学习计划"、"帮我规划复习计划"）
             
-            请输出JSON格式：{"intent": "类别名称"}
+            请输出JSON格式：{{"intent": "类别名称"}}
             """),
             ("user", query)
         ])
