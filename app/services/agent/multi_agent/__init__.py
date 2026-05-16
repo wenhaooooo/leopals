@@ -52,3 +52,8 @@ def init_multi_agent():
     message_bus.register_agent("EmotionalAgent", emotional_agent)
     message_bus.register_agent("KnowledgeAgent", knowledge_agent)
     message_bus.register_agent("AssistantAgent", assistant_agent)
+
+
+def get_orchestrator() -> Orchestrator:
+    """Get the global Orchestrator instance."""
+    return orchestrator

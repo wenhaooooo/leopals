@@ -7,10 +7,7 @@ from typing import Dict, Any, Optional, List
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel, Field
-from langchain_core.messages import HumanMessage, AIMessage
 
-from app.services.agent.graph import graph
-from app.services.agent.state import AgentState
 from app.services.rag.pgvector_retriever import pgvector_retriever
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
@@ -30,41 +27,26 @@ class ChatRequest(BaseModel):
 
 
 async def chat_stream_generator(request: ChatRequest):
+    """Stream chat responses via the multi-agent Orchestrator."""
+    from app.services.agent.multi_agent import get_orchestrator
+
+    orchestrator = get_orchestrator()
+
+    yield f"event: thought\ndata: {json.dumps({'message': '花小狮正在思考... 🤔'})}\n\n"
+
     try:
-        initial_state = AgentState(
-            messages=[HumanMessage(content=request.query)],
-            user_info=request.user_info or {},
-            retrieved_context="",
-            next_step=""
+        result = await orchestrator.process(
+            query=request.query,
+            context={"user_info": request.user_info, "session_id": request.session_id}
         )
 
-        config = {"configurable": {"thread_id": request.session_id}}
+        agent_name = result.get("agent", "Unknown")
+        yield f"event: thought\ndata: {json.dumps({'message': f'由 {agent_name} 处理'})}\n\n"
 
-        yield f"event: thought\ndata: {json.dumps({'message': '花小狮正在思考... 🤔'})}\n\n"
-
-        async for event in graph.astream(initial_state, config=config):
-            node_name = list(event.keys())[0] if event else None
-            node_output = event.get(node_name, {}) if node_name else {}
-
-            if node_name == "router":
-                next_step = node_output.get("next_step", "")
-                yield f"event: thought\ndata: {json.dumps({'message': f'路由决策: {next_step}'})}\n\n"
-
-            elif node_name == "rag_node":
-                yield f"event: on_retriever_end\ndata: {json.dumps({'message': '知识库检索完成 ✅'})}\n\n"
-
-            elif node_name == "action_node":
-                yield f"event: on_tool_end\ndata: {json.dumps({'message': '工具调用完成 ✅'})}\n\n"
-
-            elif node_name == "generate_node":
-                messages = node_output.get("messages", [])
-                if messages:
-                    last_message = messages[-1]
-                    if hasattr(last_message, 'content'):
-                        content = last_message.content
-                        for i in range(0, len(content), 10):
-                            chunk = content[i:i+10]
-                            yield f"event: on_chat_model_stream\ndata: {json.dumps({'content': chunk})}\n\n"
+        content = result.get("result", "抱歉，我暂时无法回答这个问题。")
+        for i in range(0, len(content), 10):
+            chunk = content[i:i+10]
+            yield f"event: on_chat_model_stream\ndata: {json.dumps({'content': chunk})}\n\n"
 
         yield "event: end\ndata: {}\n\n"
 
